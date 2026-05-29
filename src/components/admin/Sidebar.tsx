@@ -14,6 +14,9 @@ import {
   Truck,
   ReceiptIndianRupee,
   TicketPercent,
+  GraduationCap,
+  Calendar,
+  Briefcase,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ADMIN_LOGO } from '@/constants/media';
@@ -36,6 +39,9 @@ const sidebarItems: SidebarItem[] = [
   { name: 'Reviews', path: '/reviews', icon: Star },
   { name: 'Notifications', path: '/notifications', icon: Bell },
   { name: 'Profit', path: '/profit', icon: TrendingUp },
+  { name: 'Tutors & Academy', path: '/tutors', icon: GraduationCap },
+  { name: 'Workshops', path: '/workshops', icon: Calendar },
+  { name: 'Internship Apps', path: '/internships', icon: Briefcase },
   { name: 'Settings', path: '/settings', icon: Settings },
 ];
 

@@ -261,6 +261,29 @@ export const dashboardApi = {
     const res = await apiRequestRaw(`/dashboard/profit-insights?${query}`);
     return res.data || res;
   },
+  getRoboticsSales: async (): Promise<{
+    success: boolean;
+    data: {
+      totalCourseRevenue: number;
+      totalSessionRevenue: number;
+      totalRevenue: number;
+      courseEnrollmentsCount: number;
+      bookedSessionsCount: number;
+    }
+  }> => {
+    const res = await apiRequestRaw('/admin/sales/robotics');
+    const d = res.data || {};
+    return {
+      success: !!res.success,
+      data: {
+        totalCourseRevenue: Number(d.totalCourseSales) || 0,
+        totalSessionRevenue: Number(d.totalSessionSales) || 0,
+        totalRevenue: Number(d.totalSales) || 0,
+        courseEnrollmentsCount: Number(d.enrollmentsCount) || 0,
+        bookedSessionsCount: Number(d.bookedSessionsCount) || 0,
+      }
+    };
+  },
 };
 
 // ============ USERS ============
@@ -987,6 +1010,143 @@ export const settingsApi = {
   },
 };
 
+// ============ TUTORS ============
+
+export interface Tutor {
+  id: string;
+  name: string;
+  email: string;
+  mobile?: string;
+  role: 'student' | 'tutor' | 'admin';
+  tutorStatus: 'pending' | 'approved' | 'rejected';
+  bio?: string;
+  expertise?: string[];
+  createdAt?: string;
+}
+
+export const tutorsApi = {
+  getAll: async (): Promise<Tutor[]> => {
+    const res = await apiRequestRaw('/admin/tutors');
+    const arr = res.data || res;
+    return (Array.isArray(arr) ? arr : []).map((t: Record<string, unknown>) => ({
+      id: (t._id || t.id)?.toString() || '',
+      name: (t.name as string) || '',
+      email: (t.email as string) || '',
+      mobile: (t.mobile as string) || '',
+      role: (t.role as any) || 'student',
+      tutorStatus: (t.tutorStatus as any) || 'pending',
+      bio: (t.bio as string) || '',
+      expertise: Array.isArray(t.expertise) ? (t.expertise as string[]) : [],
+      createdAt: (t.createdAt as string) || '',
+    }));
+  },
+  updateStatus: async (tutorId: string, status: 'approved' | 'rejected'): Promise<any> => {
+    return apiRequestRaw(`/admin/tutors/${tutorId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+};
+
+// ============ WORKSHOPS ============
+
+export interface Workshop {
+  id: string;
+  title: string;
+  description: string;
+  hostName: string;
+  hostEmail: string;
+  hostId: string | { id: string; name: string; email: string };
+  date: string;
+  time: string;
+  duration: string;
+  meetingLink: string;
+  status: 'pending' | 'approved' | 'rejected';
+  enrolledStudentsCount: number;
+  createdAt: string;
+}
+
+const toWorkshop = (w: Record<string, unknown>): Workshop => {
+  const host = w.hostId && typeof w.hostId === 'object' ? (w.hostId as Record<string, unknown>) : null;
+  return {
+    id: (w._id || w.id)?.toString() || '',
+    title: (w.title as string) || '',
+    description: (w.description as string) || '',
+    hostName: (w.hostName as string) || (host ? (host.name as string) : '') || '',
+    hostEmail: (w.hostEmail as string) || (host ? (host.email as string) : '') || '',
+    hostId: host ? { id: (host._id || host.id)?.toString() || '', name: (host.name as string) || '', email: (host.email as string) || '' } : String(w.hostId || ''),
+    date: (w.date as string) || '',
+    time: (w.time as string) || '',
+    duration: (w.duration as string) || '',
+    meetingLink: (w.meetingLink as string) || '',
+    status: (w.status as 'pending' | 'approved' | 'rejected') || 'pending',
+    enrolledStudentsCount: Array.isArray(w.enrolledStudents) ? w.enrolledStudents.length : 0,
+    createdAt: (w.createdAt as string) || '',
+  };
+};
+
+export const workshopsApi = {
+  getAll: async (status?: 'pending' | 'approved' | 'rejected'): Promise<Workshop[]> => {
+    const qs = status ? `?status=${status}` : '';
+    const res = await apiRequestRaw(`/admin/workshops${qs}`);
+    const arr = res.data || res;
+    return (Array.isArray(arr) ? arr : []).map((w: Record<string, unknown>) => toWorkshop(w));
+  },
+  updateStatus: async (workshopId: string, status: 'approved' | 'rejected'): Promise<any> => {
+    return apiRequestRaw(`/admin/workshops/${workshopId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+};
+
+// ============ INTERNSHIPS ============
+
+export interface InternshipApplication {
+  id: string;
+  studentId: string | { id: string; name: string; email: string };
+  name: string;
+  email: string;
+  mobile: string;
+  skills: string[];
+  resumeUrl: string;
+  coverLetter: string;
+  portfolioUrl?: string;
+  status: 'pending' | 'under-review' | 'shortlisted' | 'rejected';
+  createdAt: string;
+}
+
+const toInternshipApplication = (i: Record<string, unknown>): InternshipApplication => {
+  const student = i.studentId && typeof i.studentId === 'object' ? (i.studentId as Record<string, unknown>) : null;
+  return {
+    id: (i._id || i.id)?.toString() || '',
+    studentId: student ? { id: (student._id || student.id)?.toString() || '', name: (student.name as string) || '', email: (student.email as string) || '' } : String(i.studentId || ''),
+    name: (i.name as string) || '',
+    email: (i.email as string) || '',
+    mobile: (i.mobile as string) || '',
+    skills: Array.isArray(i.skills) ? (i.skills as string[]) : [],
+    resumeUrl: (i.resumeUrl as string) || '',
+    coverLetter: (i.coverLetter as string) || '',
+    portfolioUrl: (i.portfolioUrl as string) || '',
+    status: (i.status as InternshipApplication['status']) || 'pending',
+    createdAt: (i.createdAt as string) || '',
+  };
+};
+
+export const internshipsApi = {
+  getAll: async (): Promise<InternshipApplication[]> => {
+    const res = await apiRequestRaw('/admin/internships');
+    const arr = res.data || res;
+    return (Array.isArray(arr) ? arr : []).map((i: Record<string, unknown>) => toInternshipApplication(i));
+  },
+  updateStatus: async (applicationId: string, status: InternshipApplication['status']): Promise<any> => {
+    return apiRequestRaw(`/admin/internships/${applicationId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+};
+
 // Export all APIs
 export const adminApi = {
   auth: authApi,
@@ -1001,6 +1161,9 @@ export const adminApi = {
   profit: profitApi,
   coupons: couponsApi,
   settings: settingsApi,
+  tutors: tutorsApi,
+  workshops: workshopsApi,
+  internships: internshipsApi,
 };
 
 export default adminApi;

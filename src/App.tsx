@@ -19,6 +19,9 @@ import ProfitManagement from "@/pages/ProfitManagement";
 import DeliveryManagement from "@/pages/DeliveryManagement";
 import OfflineOrders from "@/pages/OfflineOrders";
 import Coupons from "@/pages/Coupons";
+import Tutors from "@/pages/Tutors";
+import Workshops from "@/pages/Workshops";
+import Internships from "@/pages/Internships";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +51,9 @@ const App = () => (
                 <Route path="/reviews" element={<Reviews />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/profit" element={<ProfitManagement />} />
+                <Route path="/tutors" element={<Tutors />} />
+                <Route path="/workshops" element={<Workshops />} />
+                <Route path="/internships" element={<Internships />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
               

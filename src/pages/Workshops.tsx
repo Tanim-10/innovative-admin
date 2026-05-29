@@ -2,12 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { adminApi, Workshop } from '@/services/adminApi';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Calendar, Check, X, Search, Clock, Mail, ExternalLink, AlertCircle, Users, BookOpen
+  Calendar, Check, X, Search, Clock, Mail, ExternalLink, AlertCircle, Users, BookOpen, Plus, Linkedin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 const Workshops: React.FC = () => {
   const { toast } = useToast();
@@ -16,6 +26,21 @@ const Workshops: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [isUpdatingId, setIsUpdatingId] = useState<string | null>(null);
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    hostName: '',
+    hostLinkedIn: '',
+    thumbnail: '',
+    date: '',
+    time: '',
+    duration: '',
+    meetingLink: ''
+  });
 
   const fetchWorkshops = async () => {
     setIsLoading(true);
@@ -59,6 +84,75 @@ const Workshops: React.FC = () => {
     }
   };
 
+  const handleUploadThumbnail = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingThumbnail(true);
+    try {
+      const url = await adminApi.products.uploadImage(file);
+      if (url) {
+        setForm(prev => ({ ...prev, thumbnail: url }));
+        toast({
+          title: 'Thumbnail Uploaded',
+          description: 'Workshop thumbnail image uploaded successfully.'
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: 'Upload Failed',
+        description: err.message || 'Could not upload thumbnail.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploadingThumbnail(false);
+    }
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title || !form.description || !form.date || !form.time || !form.duration || !form.meetingLink || !form.hostName) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all fields.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await adminApi.workshops.create(form);
+      toast({
+        title: 'Success!',
+        description: 'Workshop created successfully.',
+      });
+      setIsCreateOpen(false);
+      setForm({
+        title: '',
+        description: '',
+        hostName: '',
+        hostLinkedIn: '',
+        thumbnail: '',
+        date: '',
+        time: '',
+        duration: '',
+        meetingLink: ''
+      });
+      await fetchWorkshops();
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: 'Creation Failed',
+        description: err.message || 'Could not create workshop.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Filter workshops based on search and tab status
   const filteredWorkshops = workshops.filter((w) => {
     const matchesStatus = w.status === activeTab;
@@ -89,9 +183,13 @@ const Workshops: React.FC = () => {
             Robotics Live Workshops
           </h1>
           <p className="text-sm text-muted-foreground">
-            Review and approve live workshop hosting proposals submitted by instructors.
+            Manage live workshops. Create and schedule new live sessions.
           </p>
         </div>
+        <Button onClick={() => setIsCreateOpen(true)} className="md:self-end font-semibold gap-2">
+          <Plus className="w-4 h-4" />
+          Create Workshop
+        </Button>
       </div>
 
       {/* Tabs list & Search */}
@@ -147,7 +245,16 @@ const Workshops: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredWorkshops.map((workshop) => (
             <Card key={workshop.id} className="bg-card border-border hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden shadow-sm">
-              <CardHeader className="pb-4">
+              {workshop.thumbnail ? (
+                <div className="w-full h-40 overflow-hidden relative">
+                  <img src={workshop.thumbnail} className="w-full h-full object-cover" alt={workshop.title} />
+                </div>
+              ) : (
+                <div className="w-full h-40 bg-gradient-to-br from-[#1e293b] to-[#0f172a] flex items-center justify-center text-muted-foreground relative">
+                  <Calendar className="w-8 h-8 opacity-40 text-primary" />
+                </div>
+              )}
+              <CardHeader className="pb-4 pt-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1">
                     <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary text-[10px] uppercase font-bold tracking-wider">
@@ -184,12 +291,25 @@ const Workshops: React.FC = () => {
                     <Users className="w-3.5 h-3.5 text-primary" />
                     <span>Enrolled: <span className="font-semibold text-foreground">{workshop.enrolledStudentsCount} students</span></span>
                   </div>
-                  <div className="flex items-start gap-2 pt-1 border-t border-border/20 mt-1">
-                    <Mail className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
-                    <div className="flex flex-col">
-                      <span className="text-foreground font-semibold">{workshop.hostName}</span>
-                      <span className="text-[10px] text-muted-foreground">{workshop.hostEmail}</span>
+                  <div className="flex items-start justify-between gap-2 pt-1 border-t border-border/20 mt-1">
+                    <div className="flex items-start gap-2">
+                      <Mail className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                      <div className="flex flex-col">
+                        <span className="text-foreground font-semibold">{workshop.hostName}</span>
+                        {workshop.hostEmail && <span className="text-[10px] text-muted-foreground">{workshop.hostEmail}</span>}
+                      </div>
                     </div>
+                    {workshop.hostLinkedIn && (
+                      <a 
+                        href={workshop.hostLinkedIn} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-primary hover:text-foreground transition-colors p-1"
+                        title="LinkedIn Profile"
+                      >
+                        <Linkedin className="w-3.5 h-3.5" />
+                      </a>
+                    )}
                   </div>
                 </div>
 
@@ -266,6 +386,167 @@ const Workshops: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Create Workshop Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="sm:max-w-[550px] bg-card border-border text-foreground">
+          <DialogHeader>
+            <DialogTitle>Create New Workshop</DialogTitle>
+            <DialogDescription>
+              Fill in the details to schedule and launch a new live robotics workshop.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateSubmit} className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Title</Label>
+              <Input
+                id="title"
+                required
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="e.g. Introduction to PCB Designing"
+                className="bg-background/50 border-border text-foreground"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Description</Label>
+              <Textarea
+                id="description"
+                required
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="What will students learn in this workshop?"
+                className="bg-background/50 border-border min-h-[100px] text-foreground"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="date" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  required
+                  value={form.date}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  className="bg-background/50 border-border text-foreground"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="time" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Time</Label>
+                <Input
+                  id="time"
+                  type="text"
+                  required
+                  value={form.time}
+                  onChange={(e) => setForm({ ...form, time: e.target.value })}
+                  placeholder="e.g. 5:00 PM"
+                  className="bg-background/50 border-border text-foreground"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="duration" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Duration</Label>
+                <Input
+                  id="duration"
+                  required
+                  value={form.duration}
+                  onChange={(e) => setForm({ ...form, duration: e.target.value })}
+                  placeholder="e.g. 2 Hours"
+                  className="bg-background/50 border-border text-foreground"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="hostName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tutor Name</Label>
+                <Input
+                  id="hostName"
+                  required
+                  value={form.hostName}
+                  onChange={(e) => setForm({ ...form, hostName: e.target.value })}
+                  placeholder="e.g. John Doe"
+                  className="bg-background/50 border-border text-foreground"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="hostLinkedIn" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">LinkedIn URL (Optional)</Label>
+                <Input
+                  id="hostLinkedIn"
+                  type="url"
+                  value={form.hostLinkedIn}
+                  onChange={(e) => setForm({ ...form, hostLinkedIn: e.target.value })}
+                  placeholder="e.g. https://linkedin.com/in/username"
+                  className="bg-background/50 border-border text-foreground"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="thumbnail" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Workshop Thumbnail (Optional)</Label>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    id="thumbnail-file"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadThumbnail}
+                    disabled={isUploadingThumbnail}
+                    className="bg-background/50 border-border text-foreground cursor-pointer text-xs"
+                  />
+                  {isUploadingThumbnail && (
+                    <span className="text-[10px] text-primary animate-pulse">Uploading image to Cloudinary...</span>
+                  )}
+                  {form.thumbnail && (
+                    <div className="flex items-center gap-2 border border-border bg-background/30 p-1.5 rounded-lg">
+                      <img src={form.thumbnail} alt="Thumbnail Preview" className="w-10 h-10 object-cover rounded" />
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{form.thumbnail}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setForm({ ...form, thumbnail: '' })}
+                        className="text-destructive hover:bg-destructive/10 text-[10px] h-6 px-1.5 ml-auto"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="meetingLink" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Meeting Link</Label>
+              <Input
+                id="meetingLink"
+                type="url"
+                required
+                value={form.meetingLink}
+                onChange={(e) => setForm({ ...form, meetingLink: e.target.value })}
+                placeholder="e.g. https://meet.google.com/abc-defg-hij"
+                className="bg-background/50 border-border font-mono text-xs text-foreground"
+              />
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-border/40">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreateOpen(false)}
+                disabled={isSubmitting}
+                className="border-border hover:bg-muted/10 font-semibold"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting} className="font-semibold">
+                {isSubmitting ? 'Creating...' : 'Create Workshop'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

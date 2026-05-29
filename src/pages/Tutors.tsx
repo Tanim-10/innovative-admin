@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminApi, Tutor } from '@/services/adminApi';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  GraduationCap, Check, X, Search, Clock, Mail, Phone, BookOpen, AlertCircle
+  GraduationCap, Check, X, Search, Clock, Mail, Phone, BookOpen, AlertCircle, Linkedin, Globe, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -63,11 +63,17 @@ const Tutors: React.FC = () => {
   // Filter tutors based on search and tab status
   const filteredTutors = tutors.filter((t) => {
     const matchesStatus = t.tutorStatus === activeTab;
+    const q = searchQuery.toLowerCase();
     const matchesSearch = 
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.bio && t.bio.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (t.expertise && t.expertise.some(exp => exp.toLowerCase().includes(searchQuery.toLowerCase())));
+      t.name.toLowerCase().includes(q) ||
+      t.email.toLowerCase().includes(q) ||
+      (t.bio && t.bio.toLowerCase().includes(q)) ||
+      (t.expertise && t.expertise.some(exp => exp.toLowerCase().includes(q))) ||
+      (t.education && (
+        (t.education.college && t.education.college.toLowerCase().includes(q)) ||
+        (t.education.course && t.education.course.toLowerCase().includes(q)) ||
+        (t.education.graduationYear && t.education.graduationYear.toString().includes(q))
+      ));
     return matchesStatus && matchesSearch;
   });
 
@@ -171,6 +177,21 @@ const Tutors: React.FC = () => {
                   </p>
                 </div>
 
+                {/* Education background */}
+                {tutor.education && (tutor.education.college || tutor.education.course) && (
+                  <div className="space-y-1 bg-background/30 p-2.5 rounded-lg border border-border/40">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Education</span>
+                    <div className="text-xs space-y-0.5">
+                      {tutor.education.college && (
+                        <p className="font-semibold text-foreground leading-tight">{tutor.education.college}</p>
+                      )}
+                      {tutor.education.course && (
+                        <p className="text-muted-foreground">{tutor.education.course} {tutor.education.graduationYear ? `(${tutor.education.graduationYear})` : ''}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Expertise tags */}
                 <div className="space-y-1.5">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Areas of Expertise</span>
@@ -186,6 +207,59 @@ const Tutors: React.FC = () => {
                     <span className="text-xs text-muted-foreground italic">None listed</span>
                   )}
                 </div>
+
+                {/* Social links */}
+                {tutor.socials && Object.values(tutor.socials).some(Boolean) && (
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Social Profiles</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {tutor.socials.linkedin && (
+                        <a 
+                          href={tutor.socials.linkedin.startsWith('http') ? tutor.socials.linkedin : `https://${tutor.socials.linkedin}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-[#0077B5]/10 text-[#0077B5] hover:bg-[#0077B5]/20 border border-[#0077B5]/20 font-semibold transition-colors"
+                        >
+                          <Linkedin className="w-3 h-3" />
+                          LinkedIn
+                        </a>
+                      )}
+                      {tutor.socials.googleScholar && (
+                        <a 
+                          href={tutor.socials.googleScholar.startsWith('http') ? tutor.socials.googleScholar : `https://${tutor.socials.googleScholar}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-[#4285F4]/10 text-[#4285F4] hover:bg-[#4285F4]/20 border border-[#4285F4]/20 font-semibold transition-colors"
+                        >
+                          <GraduationCap className="w-3 h-3" />
+                          Scholar
+                        </a>
+                      )}
+                      {tutor.socials.orcid && (
+                        <a 
+                          href={tutor.socials.orcid.startsWith('http') ? tutor.socials.orcid : `https://${tutor.socials.orcid}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-[#A6CE39]/10 text-[#A6CE39] hover:bg-[#A6CE39]/20 border border-[#A6CE39]/20 font-semibold transition-colors"
+                        >
+                          <Globe className="w-3 h-3" />
+                          ORCID
+                        </a>
+                      )}
+                      {tutor.socials.medium && (
+                        <a 
+                          href={tutor.socials.medium.startsWith('http') ? tutor.socials.medium : `https://${tutor.socials.medium}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-foreground/10 text-foreground hover:bg-foreground/20 border border-border font-semibold transition-colors"
+                        >
+                          <FileText className="w-3 h-3" />
+                          Medium
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Date Applied */}
                 {tutor.createdAt && (

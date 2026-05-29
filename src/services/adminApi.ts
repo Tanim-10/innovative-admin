@@ -1022,6 +1022,17 @@ export interface Tutor {
   bio?: string;
   expertise?: string[];
   createdAt?: string;
+  socials?: {
+    linkedin?: string;
+    googleScholar?: string;
+    orcid?: string;
+    medium?: string;
+  };
+  education?: {
+    college?: string;
+    graduationYear?: number;
+    course?: string;
+  };
 }
 
 export const tutorsApi = {
@@ -1038,6 +1049,8 @@ export const tutorsApi = {
       bio: (t.bio as string) || '',
       expertise: Array.isArray(t.expertise) ? (t.expertise as string[]) : [],
       createdAt: (t.createdAt as string) || '',
+      socials: t.socials as any,
+      education: t.education as any,
     }));
   },
   updateStatus: async (tutorId: string, status: 'approved' | 'rejected'): Promise<any> => {
@@ -1055,8 +1068,10 @@ export interface Workshop {
   title: string;
   description: string;
   hostName: string;
-  hostEmail: string;
-  hostId: string | { id: string; name: string; email: string };
+  hostEmail?: string;
+  hostId?: string | { id: string; name: string; email: string };
+  hostLinkedIn?: string;
+  thumbnail?: string;
   date: string;
   time: string;
   duration: string;
@@ -1075,6 +1090,8 @@ const toWorkshop = (w: Record<string, unknown>): Workshop => {
     hostName: (w.hostName as string) || (host ? (host.name as string) : '') || '',
     hostEmail: (w.hostEmail as string) || (host ? (host.email as string) : '') || '',
     hostId: host ? { id: (host._id || host.id)?.toString() || '', name: (host.name as string) || '', email: (host.email as string) || '' } : String(w.hostId || ''),
+    hostLinkedIn: (w.hostLinkedIn as string) || '',
+    thumbnail: (w.thumbnail as string) || '',
     date: (w.date as string) || '',
     time: (w.time as string) || '',
     duration: (w.duration as string) || '',
@@ -1091,6 +1108,23 @@ export const workshopsApi = {
     const res = await apiRequestRaw(`/admin/workshops${qs}`);
     const arr = res.data || res;
     return (Array.isArray(arr) ? arr : []).map((w: Record<string, unknown>) => toWorkshop(w));
+  },
+  create: async (payload: {
+    title: string;
+    description: string;
+    hostName: string;
+    hostLinkedIn?: string;
+    thumbnail?: string;
+    date: string;
+    time: string;
+    duration: string;
+    meetingLink: string;
+  }): Promise<Workshop> => {
+    const res = await apiRequestRaw('/admin/workshops', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return toWorkshop((res.data || res) as Record<string, unknown>);
   },
   updateStatus: async (workshopId: string, status: 'approved' | 'rejected'): Promise<any> => {
     return apiRequestRaw(`/admin/workshops/${workshopId}/status`, {

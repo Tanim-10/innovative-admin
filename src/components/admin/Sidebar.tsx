@@ -17,9 +17,19 @@ import {
   GraduationCap,
   Calendar,
   Briefcase,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ADMIN_LOGO } from '@/constants/media';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface SidebarItem {
   name: string;
@@ -27,22 +37,52 @@ interface SidebarItem {
   icon: React.ElementType;
 }
 
-const sidebarItems: SidebarItem[] = [
-  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Users', path: '/users', icon: Users },
-  { name: 'Products', path: '/products', icon: Package },
-  { name: 'Orders', path: '/orders', icon: ShoppingCart },
-  { name: 'Offline Orders', path: '/offline-orders', icon: ReceiptIndianRupee },
-  { name: 'Payments', path: '/payments', icon: CreditCard },
-  { name: 'Coupons', path: '/coupons', icon: TicketPercent },
-  { name: 'Delivery Management', path: '/delivery', icon: Truck },
-  { name: 'Reviews', path: '/reviews', icon: Star },
-  { name: 'Notifications', path: '/notifications', icon: Bell },
-  { name: 'Profit', path: '/profit', icon: TrendingUp },
-  { name: 'Tutors & Academy', path: '/tutors', icon: GraduationCap },
-  { name: 'Workshops', path: '/workshops', icon: Calendar },
-  { name: 'Internship Apps', path: '/internships', icon: Briefcase },
-  { name: 'Settings', path: '/settings', icon: Settings },
+interface SidebarSection {
+  title: string;
+  icon: React.ElementType;
+  items: SidebarItem[];
+}
+
+const sidebarSections: SidebarSection[] = [
+  {
+    title: 'General',
+    icon: LayoutDashboard,
+    items: [
+      { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+      { name: 'Users', path: '/users', icon: Users },
+      { name: 'Notifications', path: '/notifications', icon: Bell },
+      { name: 'Settings', path: '/settings', icon: Settings },
+    ]
+  },
+  {
+    title: 'E-Shop',
+    icon: ShoppingCart,
+    items: [
+      { name: 'Products', path: '/products', icon: Package },
+      { name: 'Orders', path: '/orders', icon: ShoppingCart },
+      { name: 'Offline Orders', path: '/offline-orders', icon: ReceiptIndianRupee },
+      { name: 'Payments', path: '/payments', icon: CreditCard },
+      { name: 'Coupons', path: '/coupons', icon: TicketPercent },
+      { name: 'Delivery', path: '/delivery', icon: Truck },
+      { name: 'Reviews', path: '/reviews', icon: Star },
+      { name: 'Profit', path: '/profit', icon: TrendingUp },
+    ]
+  },
+  {
+    title: 'Academy',
+    icon: GraduationCap,
+    items: [
+      { name: 'Tutors & Academy', path: '/tutors', icon: GraduationCap },
+      { name: 'Workshops', path: '/workshops', icon: Calendar },
+    ]
+  },
+  {
+    title: 'Careers',
+    icon: Briefcase,
+    items: [
+      { name: 'Internship Apps', path: '/internships', icon: Briefcase },
+    ]
+  }
 ];
 
 interface SidebarProps {
@@ -57,6 +97,32 @@ const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile 
 }) => {
   const location = useLocation();
+  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
+    General: true,
+    'E-Shop': true,
+    Academy: true,
+    Careers: true,
+  });
+
+  // Auto-expand the active section if location changes and it is closed
+  React.useEffect(() => {
+    const activeSection = sidebarSections.find(section => 
+      section.items.some(item => location.pathname === item.path)
+    );
+    if (activeSection) {
+      setOpenSections(prev => ({
+        ...prev,
+        [activeSection.title]: true
+      }));
+    }
+  }, [location.pathname]);
+
+  const toggleSection = (title: string) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
 
   const handleNavClick = () => {
     // Close mobile sidebar on navigation
@@ -112,31 +178,126 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-3 overflow-y-auto">
-          <ul className="space-y-1">
-            {sidebarItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              const Icon = item.icon;
+        <nav className="flex-1 py-4 px-3 overflow-y-auto space-y-4">
+          {sidebarSections.map((section) => {
+            const isOpen = openSections[section.title] !== false;
+            const SectionIcon = section.icon;
+            const isSectionActive = section.items.some(item => location.pathname === item.path);
 
+            if (isCollapsed && !isMobileOpen) {
               return (
-                <li key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    onClick={handleNavClick}
-                    className={cn(
-                      'sidebar-item',
-                      isActive && 'sidebar-item-active',
-                      isCollapsed && !isMobileOpen && 'justify-center px-2'
-                    )}
-                    title={isCollapsed && !isMobileOpen ? item.name : undefined}
-                  >
-                    <Icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-primary')} />
-                    {(!isCollapsed || isMobileOpen) && <span>{item.name}</span>}
-                  </NavLink>
-                </li>
+                <div key={section.title} className="flex justify-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className={cn(
+                          'w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200 mb-2',
+                          isSectionActive 
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' 
+                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                        )}
+                        title={section.title}
+                      >
+                        <SectionIcon className="w-5 h-5 shrink-0" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      side="right" 
+                      align="start" 
+                      className="w-48 bg-sidebar border-sidebar-border text-sidebar-foreground ml-2 p-1.5 shadow-xl"
+                    >
+                      <DropdownMenuLabel className="px-2.5 py-1.5 text-xs text-sidebar-muted uppercase tracking-widest font-semibold">
+                        {section.title}
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator className="bg-sidebar-border/50 my-1" />
+                      {section.items.map((item) => {
+                        const isActive = location.pathname === item.path;
+                        const ItemIcon = item.icon;
+                        return (
+                          <DropdownMenuItem 
+                            key={item.path} 
+                            asChild 
+                            className={cn(
+                              "focus:bg-sidebar-accent focus:text-sidebar-foreground cursor-pointer rounded-md my-0.5",
+                              isActive && "bg-sidebar-accent/50"
+                            )}
+                          >
+                            <NavLink
+                              to={item.path}
+                              onClick={handleNavClick}
+                              className={cn(
+                                'flex items-center gap-2.5 w-full px-2 py-1.5 text-sm rounded-md transition-colors',
+                                isActive ? 'text-primary font-medium' : 'text-sidebar-foreground/80'
+                              )}
+                            >
+                              <ItemIcon className="w-4 h-4 shrink-0" />
+                              <span>{item.name}</span>
+                            </NavLink>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               );
-            })}
-          </ul>
+            }
+
+            return (
+              <div key={section.title} className="space-y-1">
+                <button
+                  onClick={() => toggleSection(section.title)}
+                  className={cn(
+                    'w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 text-left',
+                    isSectionActive 
+                      ? 'text-sidebar-foreground bg-sidebar-accent/20 font-medium' 
+                      : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/10'
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <SectionIcon className={cn('w-5 h-5 shrink-0', isSectionActive ? 'text-primary' : 'text-sidebar-foreground/60')} />
+                    <span>{section.title}</span>
+                  </div>
+                  {isOpen ? (
+                    <ChevronDown className="w-4 h-4 opacity-60 transition-transform duration-200" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 opacity-60 transition-transform duration-200" />
+                  )}
+                </button>
+
+                <div
+                  className={cn(
+                    "overflow-hidden transition-all duration-300 ease-in-out",
+                    isOpen ? "max-h-[500px] opacity-100 mt-1" : "max-h-0 opacity-0 pointer-events-none"
+                  )}
+                >
+                  <ul className="pl-4 ml-[21px] space-y-1 border-l border-sidebar-border/30 my-1">
+                    {section.items.map((item) => {
+                      const isActive = location.pathname === item.path;
+                      const ItemIcon = item.icon;
+
+                      return (
+                        <li key={item.path}>
+                          <NavLink
+                            to={item.path}
+                            onClick={handleNavClick}
+                            className={cn(
+                              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200',
+                              isActive 
+                                ? 'bg-sidebar-accent text-sidebar-foreground font-medium' 
+                                : 'text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/20'
+                            )}
+                          >
+                            <ItemIcon className={cn('w-4 h-4 shrink-0', isActive && 'text-primary')} />
+                            <span>{item.name}</span>
+                          </NavLink>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+            );
+          })}
         </nav>
 
         {/* Footer */}
@@ -153,3 +314,4 @@ const Sidebar: React.FC<SidebarProps> = ({
 };
 
 export default Sidebar;
+

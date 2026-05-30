@@ -6,7 +6,14 @@
  * All backend communication MUST go through this file.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = (() => {
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (typeof apiUrl === 'string' && apiUrl.trim()) {
+    const cleanUrl = apiUrl.trim().replace(/\/$/, '');
+    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+  }
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+})();
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' ? (value as Record<string, unknown>) : null;

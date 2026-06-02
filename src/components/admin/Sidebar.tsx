@@ -19,6 +19,7 @@ import {
   Briefcase,
   ChevronDown,
   ChevronRight,
+  Image,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ADMIN_LOGO } from '@/constants/media';
@@ -50,6 +51,7 @@ const sidebarSections: SidebarSection[] = [
     items: [
       { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
       { name: 'Users', path: '/users', icon: Users },
+      { name: 'Gallery', path: '/gallery', icon: Image },
       { name: 'Notifications', path: '/notifications', icon: Bell },
       { name: 'Settings', path: '/settings', icon: Settings },
     ]

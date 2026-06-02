@@ -22,6 +22,7 @@ import Coupons from "@/pages/Coupons";
 import Tutors from "@/pages/Tutors";
 import Workshops from "@/pages/Workshops";
 import Internships from "@/pages/Internships";
+import Gallery from "@/pages/Gallery";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
               <Route element={<AdminLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/users" element={<Users />} />
+                <Route path="/gallery" element={<Gallery />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/delivery" element={<DeliveryManagement />} />

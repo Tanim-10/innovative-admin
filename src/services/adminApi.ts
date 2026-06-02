@@ -1083,6 +1083,8 @@ export interface Workshop {
   time: string;
   duration: string;
   meetingLink: string;
+  googleFormLink: string;
+  showOnHomepage: boolean;
   status: 'pending' | 'approved' | 'rejected';
   enrolledStudentsCount: number;
   createdAt: string;
@@ -1103,6 +1105,8 @@ const toWorkshop = (w: Record<string, unknown>): Workshop => {
     time: (w.time as string) || '',
     duration: (w.duration as string) || '',
     meetingLink: (w.meetingLink as string) || '',
+    googleFormLink: (w.googleFormLink as string) || '',
+    showOnHomepage: Boolean(w.showOnHomepage),
     status: (w.status as 'pending' | 'approved' | 'rejected') || 'pending',
     enrolledStudentsCount: Array.isArray(w.enrolledStudents) ? w.enrolledStudents.length : 0,
     createdAt: (w.createdAt as string) || '',
@@ -1126,9 +1130,17 @@ export const workshopsApi = {
     time: string;
     duration: string;
     meetingLink: string;
+    googleFormLink: string;
   }): Promise<Workshop> => {
     const res = await apiRequestRaw('/admin/workshops', {
       method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return toWorkshop((res.data || res) as Record<string, unknown>);
+  },
+  update: async (workshopId: string, payload: Partial<Workshop>): Promise<Workshop> => {
+    const res = await apiRequestRaw(`/admin/workshops/${workshopId}`, {
+      method: 'PATCH',
       body: JSON.stringify(payload),
     });
     return toWorkshop((res.data || res) as Record<string, unknown>);
@@ -1188,6 +1200,44 @@ export const internshipsApi = {
   },
 };
 
+export interface GalleryItem {
+  id: string;
+  title: string;
+  category: 'workshops' | 'projects' | 'lab' | 'events';
+  image: string;
+  description: string;
+  createdAt: string;
+}
+
+const toGalleryItem = (g: Record<string, unknown>): GalleryItem => ({
+  id: (g._id || g.id)?.toString() || '',
+  title: (g.title as string) || '',
+  category: (g.category as GalleryItem['category']) || 'workshops',
+  image: (g.image as string) || '',
+  description: (g.description as string) || '',
+  createdAt: (g.createdAt as string) || '',
+});
+
+export const galleryApi = {
+  getAll: async (): Promise<GalleryItem[]> => {
+    const res = await apiRequestRaw('/gallery');
+    const arr = res.data || res;
+    return (Array.isArray(arr) ? arr : []).map((g: Record<string, unknown>) => toGalleryItem(g));
+  },
+  create: async (payload: Partial<GalleryItem>): Promise<GalleryItem> => {
+    const res = await apiRequestRaw('/gallery', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return toGalleryItem(res.data || res);
+  },
+  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
+    return apiRequestRaw(`/gallery/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 // Export all APIs
 export const adminApi = {
   auth: authApi,
@@ -1205,6 +1255,7 @@ export const adminApi = {
   tutors: tutorsApi,
   workshops: workshopsApi,
   internships: internshipsApi,
+  gallery: galleryApi,
 };
 
 export default adminApi;

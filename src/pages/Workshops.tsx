@@ -24,8 +24,7 @@ const Workshops: React.FC = () => {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
-  const [isUpdatingId, setIsUpdatingId] = useState<string | null>(null);
+  const [isTogglingId, setIsTogglingId] = useState<string | null>(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,7 +38,8 @@ const Workshops: React.FC = () => {
     date: '',
     time: '',
     duration: '',
-    meetingLink: ''
+    meetingLink: '',
+    googleFormLink: ''
   });
 
   const fetchWorkshops = async () => {
@@ -63,24 +63,26 @@ const Workshops: React.FC = () => {
     fetchWorkshops();
   }, []);
 
-  const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
-    setIsUpdatingId(id);
+  const handleToggleHomepage = async (id: string, currentVal: boolean) => {
+    setIsTogglingId(id);
     try {
-      await adminApi.workshops.updateStatus(id, status);
+      await adminApi.workshops.update(id, { showOnHomepage: !currentVal });
       toast({
-        title: `Workshop ${status === 'approved' ? 'Approved' : 'Rejected'}`,
-        description: `Workshop status has been updated to ${status}.`
+        title: currentVal ? 'Removed from Homepage' : 'Added to Homepage',
+        description: currentVal 
+          ? 'The workshop is no longer featured on the homepage.'
+          : 'The workshop is now featured on the homepage.'
       });
       await fetchWorkshops();
     } catch (err: any) {
       console.error(err);
       toast({
         title: 'Action Failed',
-        description: err.message || 'Could not update workshop status.',
+        description: err.message || 'Could not update homepage feature state.',
         variant: 'destructive'
       });
     } finally {
-      setIsUpdatingId(null);
+      setIsTogglingId(null);
     }
   };
 
@@ -112,7 +114,7 @@ const Workshops: React.FC = () => {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.description || !form.date || !form.time || !form.duration || !form.meetingLink || !form.hostName) {
+    if (!form.title || !form.description || !form.date || !form.time || !form.duration || !form.meetingLink || !form.googleFormLink || !form.hostName) {
       toast({
         title: 'Validation Error',
         description: 'Please fill in all fields.',
@@ -138,7 +140,8 @@ const Workshops: React.FC = () => {
         date: '',
         time: '',
         duration: '',
-        meetingLink: ''
+        meetingLink: '',
+        googleFormLink: ''
       });
       await fetchWorkshops();
     } catch (err: any) {
@@ -153,15 +156,14 @@ const Workshops: React.FC = () => {
     }
   };
 
-  // Filter workshops based on search and tab status
+  // Filter workshops based on search query
   const filteredWorkshops = workshops.filter((w) => {
-    const matchesStatus = w.status === activeTab;
     const matchesSearch = 
       w.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       w.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       w.hostName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      w.hostEmail.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
+      (w.hostEmail && w.hostEmail.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesSearch;
   });
 
   const formatDate = (dateStr: string) => {
@@ -192,31 +194,11 @@ const Workshops: React.FC = () => {
         </Button>
       </div>
 
-      {/* Tabs list & Search */}
+      {/* Search Input & Info */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border">
-        {/* Tabs */}
-        <div className="flex bg-[#111827] p-1 rounded-lg border border-border/80 max-w-fit">
-          {(['pending', 'approved', 'rejected'] as const).map((tab) => {
-            const count = workshops.filter(w => w.status === tab).length;
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-xs font-semibold rounded-md capitalize transition-all flex items-center gap-2 ${
-                  isActive 
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
-                }`}
-              >
-                {tab}
-                <Badge variant={isActive ? 'secondary' : 'outline'} className="text-[10px] px-1.5 py-0.5">
-                  {count}
-                </Badge>
-              </button>
-            );
-          })}
-        </div>
+        <p className="text-sm font-semibold text-muted-foreground">
+          Total Workshops: <span className="text-foreground">{filteredWorkshops.length}</span>
+        </p>
 
         {/* Search Input */}
         <div className="relative w-full sm:w-72">
@@ -262,9 +244,6 @@ const Workshops: React.FC = () => {
                     </Badge>
                     <h3 className="text-base font-bold text-foreground line-clamp-2 min-h-[3rem] mt-1.5">{workshop.title}</h3>
                   </div>
-                  <Badge variant={workshop.status === 'approved' ? 'default' : workshop.status === 'rejected' ? 'destructive' : 'secondary'} className="text-[10px] uppercase font-bold tracking-wider shrink-0">
-                    {workshop.status}
-                  </Badge>
                 </div>
               </CardHeader>
               
@@ -329,58 +308,37 @@ const Workshops: React.FC = () => {
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
+
+                {/* Google Form Link */}
+                <div className="bg-muted/50 p-2.5 rounded-lg border border-border/60 flex items-center justify-between gap-2 mt-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate font-mono">{workshop.googleFormLink}</span>
+                  </div>
+                  <a
+                    href={workshop.googleFormLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary-foreground p-1 hover:bg-primary/20 rounded transition-colors shrink-0"
+                    title="Open Google Form Link"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </CardContent>
 
-              {/* Status Update Actions */}
-              <div className="p-4 mt-6 border-t border-border/60 bg-[#161c28]/45 flex items-center justify-end gap-2.5">
-                {workshop.status === 'pending' && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-destructive hover:bg-destructive/10 text-destructive text-xs gap-1 font-semibold"
-                      disabled={isUpdatingId === workshop.id}
-                      onClick={() => handleUpdateStatus(workshop.id, 'rejected')}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      Reject
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="text-xs gap-1 font-semibold"
-                      disabled={isUpdatingId === workshop.id}
-                      onClick={() => handleUpdateStatus(workshop.id, 'approved')}
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      Approve
-                    </Button>
-                  </>
-                )}
-
-                {workshop.status === 'approved' && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-destructive hover:bg-destructive/10 text-destructive text-xs gap-1 font-semibold"
-                    disabled={isUpdatingId === workshop.id}
-                    onClick={() => handleUpdateStatus(workshop.id, 'rejected')}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    Reject/Revoke
-                  </Button>
-                )}
-
-                {workshop.status === 'rejected' && (
-                  <Button
-                    size="sm"
-                    className="text-xs gap-1 font-semibold"
-                    disabled={isUpdatingId === workshop.id}
-                    onClick={() => handleUpdateStatus(workshop.id, 'approved')}
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    Approve Workshop
-                  </Button>
-                )}
+              {/* Homepage Feature Toggle */}
+              <div className="p-4 border-t border-border/60 bg-[#161c28]/45 flex items-center justify-between gap-2.5">
+                <span className="text-xs text-muted-foreground font-semibold">Show on Homepage</span>
+                <Button
+                  size="sm"
+                  variant={workshop.showOnHomepage ? "default" : "outline"}
+                  className="text-xs gap-1 font-semibold"
+                  disabled={isTogglingId === workshop.id}
+                  onClick={() => handleToggleHomepage(workshop.id, workshop.showOnHomepage)}
+                >
+                  {workshop.showOnHomepage ? "Featured" : "Feature"}
+                </Button>
               </div>
             </Card>
           ))}
@@ -526,6 +484,19 @@ const Workshops: React.FC = () => {
                 value={form.meetingLink}
                 onChange={(e) => setForm({ ...form, meetingLink: e.target.value })}
                 placeholder="e.g. https://meet.google.com/abc-defg-hij"
+                className="bg-background/50 border-border font-mono text-xs text-foreground"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="googleFormLink" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Google Form Link</Label>
+              <Input
+                id="googleFormLink"
+                type="url"
+                required
+                value={form.googleFormLink}
+                onChange={(e) => setForm({ ...form, googleFormLink: e.target.value })}
+                placeholder="e.g. https://forms.gle/..."
                 className="bg-background/50 border-border font-mono text-xs text-foreground"
               />
             </div>

@@ -1238,6 +1238,158 @@ export const galleryApi = {
   },
 };
 
+// ============ PROJECTS ============
+
+export interface Project {
+  id: string;
+  name: string;
+  sku: string;
+  shortDescription: string;
+  longDescription: string;
+  mrp: number;
+  sellingPrice: number;
+  gstMode: 'including' | 'excluding';
+  gstPercentage: number;
+  images: string[];
+  videos?: string[];
+  stockStatus: 'in_stock' | 'out_of_stock';
+  stockQuantity?: number;
+  projectType: 'combo_components' | 'ready_made';
+  components: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  estimatedBuildTime: string;
+  documentation: string;
+  status: 'active' | 'inactive';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+const toProject = (p: Record<string, unknown>): Project => ({
+  id: (p._id || p.id)?.toString() || '',
+  name: (p.name as string) || '',
+  sku: (p.sku as string) || '',
+  shortDescription: (p.shortDescription as string) || '',
+  longDescription: (p.longDescription as string) || '',
+  mrp: Number(p.mrp) || 0,
+  sellingPrice: Number(p.sellingPrice ?? p.price) || 0,
+  gstMode: (p.gstMode as 'including' | 'excluding') || 'including',
+  gstPercentage: Number(p.gstPercentage) || 18,
+  images: Array.isArray(p.images) ? (p.images as Array<{ url?: string } | string>).map((i) => (typeof i === 'string' ? i : i?.url || '')).filter(Boolean) : [],
+  videos: Array.isArray(p.videos) ? (p.videos as Array<{ url?: string } | string>).map((v) => (typeof v === 'string' ? v : v?.url || '')).filter(Boolean) : [],
+  stockStatus: (p.stockStatus as 'in_stock' | 'out_of_stock') || 'in_stock',
+  stockQuantity: p.stockQuantity != null ? Number(p.stockQuantity) : undefined,
+  projectType: (p.projectType as 'combo_components' | 'ready_made') || 'combo_components',
+  components: Array.isArray(p.components) ? (p.components as string[]) : [],
+  difficulty: (p.difficulty as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
+  estimatedBuildTime: (p.estimatedBuildTime as string) || '',
+  documentation: (p.documentation as string) || '',
+  status: (p.status as 'active' | 'inactive') || 'active',
+  createdAt: (p.createdAt as string) || '',
+  updatedAt: (p.updatedAt as string) || '',
+});
+
+export const projectsApi = {
+  getAll: async (params?: { search?: string; projectType?: string; difficulty?: string }) => {
+    const q = buildQueryString(params || {});
+    const res = await apiRequestRaw(`/projects/admin/all${q}`);
+    const arr = res.data || res;
+    return Array.isArray(arr) ? arr.map(toProject) : [];
+  },
+  getById: async (id: string) => {
+    const res = await apiRequestRaw(`/projects/${id}`);
+    return toProject(res.data || res);
+  },
+  create: async (data: Partial<Project>) => {
+    const res = await apiRequestRaw('/projects', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return toProject(res.data || res);
+  },
+  update: async (id: string, data: Partial<Project>) => {
+    const res = await apiRequestRaw(`/projects/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return toProject(res.data || res);
+  },
+  delete: async (id: string) => {
+    return apiRequestRaw(`/projects/${id}`, { method: 'DELETE' });
+  },
+};
+
+// ============ MENTORSHIPS ============
+
+export interface MentorshipRequest {
+  id: string;
+  userId: { id: string; name: string; email: string; mobile?: string } | string;
+  topic: string;
+  description: string;
+  preferredDate: string;
+  preferredTime: string;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  tutorId?: { id: string; name: string; email: string; profileImage?: string; expertise?: string[] } | string;
+  meetingLink?: string;
+  adminNotes?: string;
+  createdAt: string;
+}
+
+const toMentorshipRequest = (m: Record<string, unknown>): MentorshipRequest => {
+  const parseUserRef = (val: unknown) => {
+    const rec = asRecord(val);
+    if (rec) {
+      return {
+        id: (rec._id ?? rec.id ?? '').toString(),
+        name: (rec.name ?? '').toString(),
+        email: (rec.email ?? '').toString(),
+        mobile: rec.mobile ? rec.mobile.toString() : undefined,
+      };
+    }
+    return val != null ? String(val) : '';
+  };
+  const parseTutorRef = (val: unknown) => {
+    const rec = asRecord(val);
+    if (rec) {
+      return {
+        id: (rec._id ?? rec.id ?? '').toString(),
+        name: (rec.name ?? '').toString(),
+        email: (rec.email ?? '').toString(),
+        profileImage: rec.profileImage ? rec.profileImage.toString() : undefined,
+        expertise: Array.isArray(rec.expertise) ? (rec.expertise as string[]) : undefined,
+      };
+    }
+    return val != null ? String(val) : undefined;
+  };
+  return {
+    id: (m._id || m.id)?.toString() || '',
+    userId: parseUserRef(m.userId),
+    topic: (m.topic as string) || '',
+    description: (m.description as string) || '',
+    preferredDate: (m.preferredDate as string) || '',
+    preferredTime: (m.preferredTime as string) || '',
+    status: (m.status as MentorshipRequest['status']) || 'pending',
+    tutorId: parseTutorRef(m.tutorId),
+    meetingLink: (m.meetingLink as string) || '',
+    adminNotes: (m.adminNotes as string) || '',
+    createdAt: (m.createdAt as string) || '',
+  };
+};
+
+export const mentorshipsApi = {
+  getAll: async () => {
+    const res = await apiRequestRaw('/mentorships');
+    const arr = res.data || res;
+    return Array.isArray(arr) ? arr.map(toMentorshipRequest) : [];
+  },
+  update: async (id: string, data: { status?: string; tutorId?: string | null; meetingLink?: string; adminNotes?: string }) => {
+    const res = await apiRequestRaw(`/mentorships/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return toMentorshipRequest(res.data || res);
+  },
+};
+
 // Export all APIs
 export const adminApi = {
   auth: authApi,
@@ -1256,6 +1408,8 @@ export const adminApi = {
   workshops: workshopsApi,
   internships: internshipsApi,
   gallery: galleryApi,
+  projects: projectsApi,
+  mentorships: mentorshipsApi,
 };
 
 export default adminApi;

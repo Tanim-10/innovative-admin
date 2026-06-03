@@ -20,6 +20,8 @@ import {
   ChevronDown,
   ChevronRight,
   Image,
+  Layers,
+  Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ADMIN_LOGO } from '@/constants/media';
@@ -71,6 +73,14 @@ const sidebarSections: SidebarSection[] = [
     ]
   },
   {
+    title: 'Projects & Mentorship',
+    icon: Layers,
+    items: [
+      { name: 'Projects', path: '/projects', icon: Layers },
+      { name: 'Mentorship', path: '/mentorship-requests', icon: Video },
+    ]
+  },
+  {
     title: 'Academy',
     icon: GraduationCap,
     items: [
@@ -102,6 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
     General: true,
     'E-Shop': true,
+    'Projects & Mentorship': true,
     Academy: true,
     Careers: true,
   });

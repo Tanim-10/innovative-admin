@@ -1390,6 +1390,108 @@ export const mentorshipsApi = {
   },
 };
 
+// ============ IDEAS & COMMUNITY ============
+
+export interface Idea {
+  _id: string;
+  type: 'community' | 'structured';
+  title?: string;
+  category: string;
+  description: string;
+  problemStatement?: string;
+  solution?: string;
+  techStack?: string[];
+  links?: string[];
+  photos?: string[];
+  files?: Array<{ name: string; url: string; publicId?: string }>;
+  upvotes: string[];
+  downvotes: string[];
+  commentsCount: number;
+  isHidden: boolean;
+  isDeleted: boolean;
+  userId?: {
+    _id: string;
+    name: string;
+    profileImage?: string;
+    role: string;
+  };
+  adminId?: {
+    _id: string;
+    email: string;
+    role: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IdeaComment {
+  _id: string;
+  ideaId: string;
+  comment: string;
+  userId?: {
+    _id: string;
+    name: string;
+    profileImage?: string;
+    role: string;
+  };
+  adminId?: {
+    _id: string;
+    email: string;
+    role: string;
+  };
+  isHidden: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const ideasApi = {
+  getAll: async (params?: { type?: string; category?: string; search?: string; skip?: number; limit?: number }) => {
+    const qs = buildQueryString({
+      type: params?.type,
+      category: params?.category,
+      search: params?.search,
+      skip: params?.skip,
+      limit: params?.limit,
+    });
+    const res = await apiRequestRaw(`/ideas${qs}`);
+    return {
+      success: !!res.success,
+      data: (res.data || []) as Idea[],
+      total: Number(res.total) || 0,
+    };
+  },
+  toggleHide: async (id: string) => {
+    const res = await apiRequestRaw(`/ideas/${id}/hide`, { method: 'PATCH' });
+    return {
+      success: !!res.success,
+      data: res.data as { isHidden: boolean },
+      message: (res.message || '') as string,
+    };
+  },
+  delete: async (id: string) => {
+    return apiRequestRaw(`/ideas/${id}`, { method: 'DELETE' });
+  },
+  getComments: async (ideaId: string) => {
+    const res = await apiRequestRaw(`/ideas/${ideaId}/comments`);
+    return {
+      success: !!res.success,
+      data: (res.data || []) as IdeaComment[],
+    };
+  },
+  toggleHideComment: async (commentId: string) => {
+    const res = await apiRequestRaw(`/ideas/comments/${commentId}/hide`, { method: 'PATCH' });
+    return {
+      success: !!res.success,
+      data: res.data as { isHidden: boolean },
+      message: (res.message || '') as string,
+    };
+  },
+  deleteComment: async (commentId: string) => {
+    return apiRequestRaw(`/ideas/comments/${commentId}`, { method: 'DELETE' });
+  },
+};
+
 // Export all APIs
 export const adminApi = {
   auth: authApi,
@@ -1410,6 +1512,7 @@ export const adminApi = {
   gallery: galleryApi,
   projects: projectsApi,
   mentorships: mentorshipsApi,
+  ideas: ideasApi,
 };
 
 export default adminApi;

@@ -163,7 +163,7 @@ const Dashboard: React.FC = () => {
     },
     {
       key: 'orderStatus',
-      header: 'Status',
+      header: 'Status ',
       render: (order: Order) => (
         <StatusBadge variant={getStatusVariant(order.orderStatus)}>
           {ORDER_STATUS_LABELS[order.orderStatus]}

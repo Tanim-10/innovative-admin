@@ -24,8 +24,6 @@ import Workshops from "@/pages/Workshops";
 import Internships from "@/pages/Internships";
 import Gallery from "@/pages/Gallery";
 import Projects from "@/pages/Projects";
-import MentorshipRequests from "@/pages/MentorshipRequests";
-import ResourcesHub from "@/pages/ResourcesHub";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,8 +58,6 @@ const App = () => (
                 <Route path="/workshops" element={<Workshops />} />
                 <Route path="/internships" element={<Internships />} />
                 <Route path="/projects" element={<Projects />} />
-                <Route path="/mentorship-requests" element={<MentorshipRequests />} />
-                <Route path="/community" element={<ResourcesHub />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
               

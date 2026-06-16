@@ -370,29 +370,15 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Robotics Academy Learning Sales */}
+      {/* Robotics Academy Tutoring Sales */}
       <div className="card-elevated p-5 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-          <h2 className="text-base font-semibold text-foreground">Robotics Academy Learning Sales</h2>
+          <h2 className="text-base font-semibold text-foreground">Robotics Academy Tutoring Sales</h2>
           <p className="text-xs text-muted-foreground">
-            Revenue metrics from robotics courses and booked tutoring sessions.
+            Revenue metrics from booked tutoring sessions.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">Course Purchases</span>
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-xs text-muted-foreground">Enrollments</p>
-                <p className="font-bold text-lg text-foreground">{roboticsSales.courseEnrollmentsCount.toLocaleString()}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Revenue</p>
-                <p className="font-bold text-lg text-primary">{formatCurrency(roboticsSales.totalCourseRevenue)}</p>
-              </div>
-            </div>
-          </div>
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">Tutoring Bookings</span>
             <div className="flex justify-between items-end">
@@ -403,20 +389,6 @@ const Dashboard: React.FC = () => {
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Revenue</p>
                 <p className="font-bold text-lg text-primary">{formatCurrency(roboticsSales.totalSessionRevenue)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
-            <span className="text-xs font-medium text-primary uppercase tracking-wider block">Consolidated Robotics Revenue</span>
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-xs text-muted-foreground">Transactions</p>
-                <p className="font-bold text-lg text-foreground">{(roboticsSales.courseEnrollmentsCount + roboticsSales.bookedSessionsCount).toLocaleString()}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Total Revenue</p>
-                <p className="font-bold text-xl text-success">{formatCurrency(roboticsSales.totalRevenue)}</p>
               </div>
             </div>
           </div>

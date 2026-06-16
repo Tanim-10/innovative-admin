@@ -54,7 +54,6 @@ const sidebarSections: SidebarSection[] = [
     items: [
       { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
       { name: 'Users', path: '/users', icon: Users },
-      { name: 'Community Hub', path: '/community', icon: MessageSquare },
       { name: 'Gallery', path: '/gallery', icon: Image },
       { name: 'Notifications', path: '/notifications', icon: Bell },
       { name: 'Settings', path: '/settings', icon: Settings },
@@ -75,11 +74,10 @@ const sidebarSections: SidebarSection[] = [
     ]
   },
   {
-    title: 'Projects & Mentorship',
+    title: 'Projects',
     icon: Layers,
     items: [
       { name: 'Projects', path: '/projects', icon: Layers },
-      { name: 'Mentorship', path: '/mentorship-requests', icon: Video },
     ]
   },
   {
@@ -114,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
     General: true,
     'E-Shop': true,
-    'Projects & Mentorship': true,
+    Projects: true,
     Academy: true,
     Careers: true,
   });
